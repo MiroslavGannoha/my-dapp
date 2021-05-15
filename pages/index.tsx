@@ -1,8 +1,29 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import { ethers } from "ethers";
+import detectEthereumProvider from '@metamask/detect-provider';
 
+async function initEther() {
+  const ethereumProvider = await detectEthereumProvider();
+  if (ethereumProvider) {
+    // From now on, this should always be true:
+    // provider === window.ethereum
+    const provider = new ethers.providers.Web3Provider(ethereumProvider)
+    // const provider = new ethers.providers.JsonRpcProvider();
+    const signer = provider.getSigner()
+    console.log(signer);
+    const n = await provider.getBlockNumber()
+    // const balance = await provider.getBalance("ethers.eth")
+    console.log(n);
+
+  } else {
+    console.log('Please install MetaMask!');
+  }
+}
+initEther();
 export default function Home() {
+  ethers
   return (
     <div>
       <Head>
@@ -67,3 +88,4 @@ export default function Home() {
     </div>
   )
 }
+
