@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 import detectEthereumProvider from '@metamask/detect-provider';
 
 async function initEther() {
-  const ethereumProvider = await detectEthereumProvider();
+  const ethereumProvider:any = await detectEthereumProvider();
   if (ethereumProvider) {
     // From now on, this should always be true:
     // provider === window.ethereum
@@ -13,13 +13,51 @@ async function initEther() {
     // const provider = new ethers.providers.JsonRpcProvider();
     const signer = provider.getSigner()
     console.log(signer);
+    console.log('signer address', await signer.getAddress());
+    // console.log(await (await signer.getBalance()).toNumber())
+
     const n = await provider.getBlockNumber()
     // const balance = await provider.getBalance("ethers.eth")
-    console.log(n);
+    console.log('blocks', n);
+    // console.log(balance);
+    await ethereumProvider.request({ method: 'eth_requestAccounts' });
+    // const balance = await provider.getBalance("ethers.eth")
+    // console.log(balance);
+    // The Contract object
+    const daiAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+    const daiAbi = [
+      // Some details about the token
+      "function greet() public view returns (string memory)",
+      "function setGreeting(string memory _greeting)",
+      
+      // "function symbol() view returns (string)",
+    
+      // // Get the account balance
+      // "function balanceOf(address) view returns (uint)",
+    
+      // // Send some of your tokens to someone else
+      // "function transfer(address to, uint amount)",
+    
+      // // An event triggered whenever anyone transfers to someone else
+      // "event Transfer(address indexed from, address indexed to, uint amount)"
+    ];
+    const daiContract = new ethers.Contract(daiAddress, daiAbi, signer);
+    console.log({daiContract});
+    
+    try{
+      console.log(await daiContract.greet())
+      // await daiContract.setGreeting('hahahhahahahah')
+      // console.log(await daiContract.greet())
+      // console.log(await daiContract.getBalance())
+
+    } catch(e) {
+      console.warn(e)
+    }
 
   } else {
     console.log('Please install MetaMask!');
   }
+
 }
 initEther();
 export default function Home() {
