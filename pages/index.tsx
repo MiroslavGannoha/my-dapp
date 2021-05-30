@@ -1,67 +1,113 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
-import { ethers } from "ethers";
-import detectEthereumProvider from '@metamask/detect-provider';
+import Head from "next/head";
+import Image from "next/image";
+import styles from "../styles/Home.module.css";
+import { Contract, ethers } from "ethers";
+import detectEthereumProvider from "@metamask/detect-provider";
+import { makeAutoObservable } from "mobx";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import { useEffect, useState } from "react";
 
-async function initEther() {
-  const ethereumProvider:any = await detectEthereumProvider();
-  if (ethereumProvider) {
-    // From now on, this should always be true:
-    // provider === window.ethereum
-    const provider = new ethers.providers.Web3Provider(ethereumProvider)
+class App {
+  signer: ethers.providers.JsonRpcSigner | null = null;
+  provider: ethers.providers.Web3Provider | null = null;
+  address: string = "";
+  balance: number = 0;
+  blocks: number = 0;
+
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  *connect() {
+    const ethereumProvider: ethers.providers.ExternalProvider =
+      yield detectEthereumProvider() as ethers.providers.ExternalProvider;
+    if (!ethereumProvider || !ethereumProvider.request) {
+      throw new Error("Provider not found!");
+    }
+
+    try {
+      yield ethereumProvider.request({ method: "eth_requestAccounts" });
+    } catch (e) {
+      console.warn(e);
+      return;
+    }
+    this.provider = new ethers.providers.Web3Provider(ethereumProvider);
     // const provider = new ethers.providers.JsonRpcProvider();
-    const signer = provider.getSigner()
-    console.log(signer);
-    console.log('signer address', await signer.getAddress());
-    // console.log(await (await signer.getBalance()).toNumber())
+    this.signer = this.provider.getSigner();
+    this.address = yield this.signer.getAddress();
+    console.log(this.address);
+    this.balance = yield (yield this.signer.getBalance()).toString();
+    this.blocks = yield this.provider.getBlockNumber();
+    // const balance = await provider.getBalance("ethers.eth")
+    // console.log(balance);
+  }
 
-    const n = await provider.getBlockNumber()
-    // const balance = await provider.getBalance("ethers.eth")
-    console.log('blocks', n);
-    // console.log(balance);
-    await ethereumProvider.request({ method: 'eth_requestAccounts' });
-    // const balance = await provider.getBalance("ethers.eth")
-    // console.log(balance);
+  get isConnected(): boolean {
+    return Boolean(this.provider);
+  }
+}
+
+const app = new App();
+
+class GreetContract {
+  signer: ethers.providers.JsonRpcSigner | null = null;
+  contract: ethers.Contract | null = null;
+  greeting: string = "";
+  constructor(signer: ethers.providers.JsonRpcSigner) {
+    console.log('constructor');
+    
     // The Contract object
     const daiAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
     const daiAbi = [
       // Some details about the token
       "function greet() public view returns (string memory)",
       "function setGreeting(string memory _greeting)",
-      
+
       // "function symbol() view returns (string)",
-    
+
       // // Get the account balance
       // "function balanceOf(address) view returns (uint)",
-    
+
       // // Send some of your tokens to someone else
       // "function transfer(address to, uint amount)",
-    
+
       // // An event triggered whenever anyone transfers to someone else
       // "event Transfer(address indexed from, address indexed to, uint amount)"
     ];
-    const daiContract = new ethers.Contract(daiAddress, daiAbi, signer);
-    console.log({daiContract});
+    this.contract = new ethers.Contract(daiAddress, daiAbi, signer);
+    console.log('contract', this.contract);
     
-    try{
-      console.log(await daiContract.greet())
-      // await daiContract.setGreeting('hahahhahahahah')
-      // console.log(await daiContract.greet())
-      // console.log(await daiContract.getBalance())
-
-    } catch(e) {
-      console.warn(e)
-    }
-
-  } else {
-    console.log('Please install MetaMask!');
+    makeAutoObservable(this);
   }
 
+  *greet() {
+    this.greeting = yield this.contract?.greet();
+  }
+
+  *setGreet(greeting: string) {
+    yield this.contract?.setGreeting(greeting);
+  }
 }
-initEther();
-export default function Home() {
-  ethers
+
+// initEther();
+const Home = observer(() => {
+  const state = useLocalObservable((): {
+    contract: GreetContract | null;
+    setContract: (contract: GreetContract) => void;
+    newGreeting: string;
+    setNewGreeting: (val: string) => void
+  } => ({
+    contract: null,
+    setContract(contract: GreetContract) {
+      console.log({contract});
+      
+      this.contract = contract;
+    },
+    newGreeting: '',
+    setNewGreeting(newGreeting: string) {
+      this.newGreeting = newGreeting;
+    },
+  }));
   return (
     <div>
       <Head>
@@ -69,45 +115,42 @@ export default function Home() {
         <meta name="description" content="Generated by create next app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
+      <button
+        onClick={() => app.connect()}
+        className="bg-blue-300 p-3 rounded-xl border-blue-600 border-solid border w-200 m-3 focus:outline-none"
+      >
+        Connect wallet
+      </button>
       <main className={styles.main}>
-        <h1 className="bg-black">
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+        <div>
+          <div>
+            <h2>{app.isConnected ? "Connected" : "Not connected"}</h2>
+            <p>Address: {app.address}</p>
+            <p>Balance: {app.balance}</p>
+            <p>Blocks: {app.blocks}</p>
+          </div>
+        </div>
+        <div>
+          <button
+            onClick={() => {
+              if (!app.signer) {
+                return;
+              }
+              const contract = new GreetContract(app.signer);
+              console.log({contract});
+              
+              state.setContract(contract);
+            }}
+            className="bg-blue-500 p-2"
           >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+            Create contract
+          </button>
+          <button onClick={() => state.contract?.greet()} className="bg-blue-500 p-2">Update greeting</button>
+          <h4 className="h-4 font-bold m-3">Greeting: {state.contract?.greeting}</h4>
+          <div>
+            <input type="text" value={state.newGreeting} onChange={(e) => state.setNewGreeting(e.target.value)} className="bg-yellow-100" />
+            <button onClick={(e) => state.contract?.setGreet(state.newGreeting)} className="bg-blue-500 p-2">Submit</button>
+          </div>
         </div>
       </main>
 
@@ -117,13 +160,14 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
+          Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
         </a>
       </footer>
     </div>
-  )
-}
+  );
+});
 
+export default Home;
