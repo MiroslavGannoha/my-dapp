@@ -11,22 +11,22 @@ class App {
   signer: ethers.providers.JsonRpcSigner | null = null;
   provider: ethers.providers.Web3Provider | null = null;
   address: string = "";
-  balance: number = 0;
+  balance: string = '0';
   blocks: number = 0;
 
   constructor() {
     makeAutoObservable(this);
   }
 
-  *connect() {
+  async connect() {
     const ethereumProvider: ethers.providers.ExternalProvider =
-      yield detectEthereumProvider() as ethers.providers.ExternalProvider;
+      await detectEthereumProvider() as ethers.providers.ExternalProvider;
     if (!ethereumProvider || !ethereumProvider.request) {
       throw new Error("Provider not found!");
     }
 
     try {
-      yield ethereumProvider.request({ method: "eth_requestAccounts" });
+      await ethereumProvider.request({ method: "eth_requestAccounts" });
     } catch (e) {
       console.warn(e);
       return;
@@ -34,10 +34,10 @@ class App {
     this.provider = new ethers.providers.Web3Provider(ethereumProvider);
     // const provider = new ethers.providers.JsonRpcProvider();
     this.signer = this.provider.getSigner();
-    this.address = yield this.signer.getAddress();
+    this.address = await this.signer.getAddress();
     console.log(this.address);
-    this.balance = yield (yield this.signer.getBalance()).toString();
-    this.blocks = yield this.provider.getBlockNumber();
+    this.balance = await (await this.signer.getBalance()).toString();
+    this.blocks = await this.provider.getBlockNumber();
     // const balance = await provider.getBalance("ethers.eth")
     // console.log(balance);
   }
