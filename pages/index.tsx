@@ -6,6 +6,8 @@ import detectEthereumProvider from "@metamask/detect-provider";
 import { makeAutoObservable } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import Greeter from '../artifacts/contracts/Greeter.sol/Greeter.json'
+import ZombieFactory from '../artifacts/contracts/ZombieFactory.sol/ZombieFactory.json'
 
 class App {
   signer: ethers.providers.JsonRpcSigner | null = null;
@@ -52,40 +54,29 @@ const app = new App();
 class GreetContract {
   signer: ethers.providers.JsonRpcSigner | null = null;
   contract: ethers.Contract | null = null;
+  address = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
   greeting: string = "";
-  constructor(signer: ethers.providers.JsonRpcSigner) {
-    console.log('constructor');
-    
-    // The Contract object
-    const daiAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-    const daiAbi = [
-      // Some details about the token
-      "function greet() public view returns (string memory)",
-      "function setGreeting(string memory _greeting)",
+  provider: ethers.providers.Web3Provider | null = null;
+  constructor(provider: ethers.providers.Web3Provider) {
+    this.provider = provider;
 
-      // "function symbol() view returns (string)",
-
-      // // Get the account balance
-      // "function balanceOf(address) view returns (uint)",
-
-      // // Send some of your tokens to someone else
-      // "function transfer(address to, uint amount)",
-
-      // // An event triggered whenever anyone transfers to someone else
-      // "event Transfer(address indexed from, address indexed to, uint amount)"
-    ];
-    this.contract = new ethers.Contract(daiAddress, daiAbi, signer);
-    console.log('contract', this.contract);
-    
     makeAutoObservable(this);
+
+    
   }
 
   *greet() {
-    this.greeting = yield this.contract?.greet();
+    if (this.provider) {
+      const contract = new ethers.Contract(this.address, Greeter.abi, this.provider);
+      this.greeting = yield contract.greet();
+    }
   }
 
   *setGreet(greeting: string) {
-    yield this.contract?.setGreeting(greeting);
+    if (this.provider) {
+      const contract = new ethers.Contract(this.address, Greeter.abi, this.provider?.getSigner());
+      yield contract.setGreeting(greeting);
+    }
   }
 }
 
@@ -136,16 +127,14 @@ const Home = observer(() => {
               if (!app.signer) {
                 return;
               }
-              const contract = new GreetContract(app.signer);
-              console.log({contract});
-              
-              state.setContract(contract);
+              const contract = app.provider && new GreetContract(app.provider);
+              contract && state.setContract(contract);
             }}
             className="bg-blue-500 p-2"
           >
             Create contract
           </button>
-          <button onClick={() => state.contract?.greet()} className="bg-blue-500 p-2">Update greeting</button>
+          <button onClick={() => state.contract?.greet()} className="bg-blue-500 p-2">Fetch greeting</button>
           <h4 className="h-4 font-bold m-3">Greeting: {state.contract?.greeting}</h4>
           <div>
             <input type="text" value={state.newGreeting} onChange={(e) => state.setNewGreeting(e.target.value)} className="bg-yellow-100" />

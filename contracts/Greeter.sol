@@ -15,6 +15,13 @@ contract Greeter {
   function greet() public view returns (string memory) {
     return greeting;
   }
+  function greet2() public view returns (string memory) {
+    return greeting;
+  }
+
+  function sayHi() public pure returns (string memory) {
+        return "Hi";
+  }
 
   function setGreeting(string memory _greeting) public {
     console.log("Changing greeting from '%s' to '%s'", greeting, _greeting);
