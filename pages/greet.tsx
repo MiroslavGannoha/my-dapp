@@ -1,16 +1,17 @@
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
-import { observer } from "mobx-react-lite";
+import { observer, useLocalObservable } from "mobx-react-lite";
 import { app } from "../src/app";
+import { GreetContract } from "../src/app/contracts/GreetContract";
 import { useState } from "react";
-import { ZombieFactory } from "../src/app/contracts/ZombieFactory";
 
-const zombieFactory = app.provider && new ZombieFactory(app.provider);
 
 // initEther();
-const Home = observer(() => {
-  const [newZombieName, setNewZombieName] = useState('')
+const Greet = observer(() => {
+  const [newGreeting, setNewGreeting] = useState('')
+  const [contract, setContract] = useState<GreetContract | null>(null)
+  
   return (
     <div>
       <Head>
@@ -20,7 +21,7 @@ const Home = observer(() => {
       </Head>
       <div className="flex">
         <button
-          onClick={() => app.connect()}
+          onClick={() => app.connect().then((provider) => setContract(new GreetContract(provider)))}
           className="bg-blue-300 p-3 rounded-xl border-blue-600 border-solid border w-200 m-3 focus:outline-none"
         >
           Connect wallet
@@ -35,24 +36,24 @@ const Home = observer(() => {
 
       <main className={styles.main}>
         <div>
-          {/* <button
-            onClick={() => contract?.greet()}
+          <button
+            onClick={() => {console.log('fecth', contract); contract?.greet();}}
             className="bg-blue-500 p-2"
           >
-            Fetch zombies
+            Fetch greeting
           </button>
           <h4 className="h-4 font-bold m-3">
-            Zombies: {contract?.greeting}
-          </h4> */}
+            Greeting: {contract?.greeting}
+          </h4>
           <div>
             <input
               type="text"
-              value={newZombieName}
-              onChange={(e) => setNewZombieName(e.target.value)}
+              value={newGreeting}
+              onChange={(e) => setNewGreeting(e.target.value)}
               className="bg-yellow-100"
             />
             <button
-              onClick={(e) => zombieFactory?.createRandomZombie(newZombieName)}
+              onClick={(e) => contract?.setGreet(newGreeting)}
               className="bg-blue-500 p-2"
             >
               Submit
@@ -77,4 +78,4 @@ const Home = observer(() => {
   );
 });
 
-export default Home;
+export default Greet;

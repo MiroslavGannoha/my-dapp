@@ -9,7 +9,17 @@ npm run dev
 # or
 yarn dev
 ```
+Hardhat:
+```bash
+# run a node
+npx hardhat node
 
+# compile contracts
+npx hardhat compile
+
+# deploy contracts to localhost
+npx hardhat run --network localhost scripts/deploy.js
+```
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
