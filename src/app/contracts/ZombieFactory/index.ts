@@ -4,7 +4,7 @@ import artifacts from '../../../../artifacts/contracts/ZombieFactory.sol/ZombieF
 import { ContractStoreBase } from '../ContractBase';
 
 export class ZombieFactory extends ContractStoreBase {
-    readonly address = '0x5fbdb2315678afecb367f032d93f642f64180aa3';
+    readonly address = '0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9';
 
     constructor(provider: ethers.providers.Web3Provider) {
         super(provider);
@@ -18,8 +18,8 @@ export class ZombieFactory extends ContractStoreBase {
             artifacts.abi,
             provider.getSigner()
         );
-        this.contract.on('NewZombie', (z) => {
-            console.log('NEW ZOMBIE', z);
+        this.contract.on('NewZombie', (id, name, dna, contract) => {
+            console.log('NEW ZOMBIE', id, name, dna, contract);
         });
         makeObservable(this, {
             createRandomZombie: action,
@@ -28,5 +28,10 @@ export class ZombieFactory extends ContractStoreBase {
 
     createRandomZombie(name: string): void {
         this.signerContract?.createRandomZombie(name);
+    }
+
+    async getZombies() {
+        const zombies = await this.contract?.getZombies();
+        return zombies;
     }
 }

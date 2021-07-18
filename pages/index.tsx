@@ -6,12 +6,15 @@ import { app } from '../src/app';
 import { useState } from 'react';
 import { ZombieFactory } from '../src/app/contracts/ZombieFactory';
 import React from 'react';
+import { Button } from '../components/Button';
+import { Input } from '../components';
 
 const Home = observer(() => {
+    const [zombies, setZombies] = useState([]);
     const [newZombieName, setNewZombieName] = useState('');
     const [contract, setContract] = useState<ZombieFactory | null>(null);
     return (
-        <div>
+        <div className="bg-blue-50">
             <Head>
                 <title>Create Next App</title>
                 <meta
@@ -21,7 +24,7 @@ const Home = observer(() => {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             <div className="flex">
-                <button
+                <Button
                     onClick={() =>
                         app
                             .connect()
@@ -29,10 +32,9 @@ const Home = observer(() => {
                                 setContract(new ZombieFactory(provider))
                             )
                     }
-                    className="bg-blue-300 p-3 rounded-xl border-blue-600 border-solid border w-200 m-3 focus:outline-none"
                 >
                     Connect wallet
-                </button>
+                </Button>
                 <div>
                     <h2>{app.isConnected ? 'Connected' : 'Not connected'}</h2>
                     <p>Address: {app.address}</p>
@@ -53,21 +55,31 @@ const Home = observer(() => {
             Zombies: {contract?.greeting}
           </h4> */}
                     <div>
-                        <input
+                        <Input
                             type="text"
                             value={newZombieName}
                             onChange={(e) => setNewZombieName(e.target.value)}
-                            className="bg-yellow-100"
                         />
-                        <button
-                            onClick={(e) =>
+                        <Button
+                            onClick={() =>
                                 contract?.createRandomZombie(newZombieName)
                             }
-                            className="bg-blue-500 p-2"
                         >
-                            Submit
-                        </button>
+                            Create Zombie
+                        </Button>
                     </div>
+                    <div>
+                        <Button
+                            onClick={() =>
+                                contract
+                                    ?.getZombies()
+                                    .then((z) => setZombies(z))
+                            }
+                        >
+                            Get Zombies
+                        </Button>
+                    </div>
+                    <div>{zombies.map(({name}) => name).join(', ')}</div>
                 </div>
             </main>
 

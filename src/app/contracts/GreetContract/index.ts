@@ -4,7 +4,7 @@ import Greeter from '../../../../artifacts/contracts/Greeter.sol/Greeter.json';
 import { ContractStoreBase } from '../ContractBase';
 
 export class GreetContract extends ContractStoreBase {
-    address = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+    address = '0xdc64a140aa3e981100a9beca4e685f962f0cf6c9';
     greeting = '';
     constructor(provider: ethers.providers.Web3Provider) {
         super(provider);
